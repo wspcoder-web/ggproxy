@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Slugger Bros: Arcade Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #0d1b2a;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 740px;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #ffb703;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .scoreboard {
+      display: flex;
+      gap: 16px;
+      background: #1b263b;
+      padding: 8px 18px;
+      border-radius: 10px;
+      border: 2px solid #415a77;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    .scoreboard span {
+      color: #8ecae6;
+    }
+
+    .game-container {
+      position: relative;
+      width: 100%;
+      max-width: 740px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #2b9348;
+      border: 4px solid #e0e1dd;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      touch-action: manipulation;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(13, 27, 42, 0.92);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .overlay h2 {
+      font-size: 2rem;
+      color: #ffb703;
+      margin-bottom: 8px;
+    }
+
+    .overlay p {
+      color: #cbd5e1;
+      margin-bottom: 18px;
+      font-size: 0.95rem;
+    }
+
+    .picker-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .picker-box {
+      background: #1b263b;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 1px solid #415a77;
+    }
+
+    .picker-box h4 {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: #8ecae6;
+    }
+
+    .swatches {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+    }
+
+    .swatch.active {
+      border-color: #ffffff;
+      transform: scale(1.15);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      background: #ffb703;
+      color: #0d1b2a;
+      border: none;
+      padding: 12px 22px;
+      font-size: 1rem;
+      font-weight: 800;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button.secondary {
+      background: #219ebc;
+      color: #ffffff;
+    }
+
+    .bottom-controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="title">⚾ Slugger Bros</div>
+    <div class="scoreboard">
+      <div>INNING: <span id="inningDisplay">1</span></div>
+      <div>RUNS: <span id="runsDisplay">0</span></div>
+      <div>OUTS: <span id="outsDisplay">0</span>/3</div>
+      <div>BEST: <span id="bestDisplay">0</span></div>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <canvas id="gameCanvas" width="740" height="480"></canvas>
+
+    <div class="overlay" id="menuOverlay">
+      <h2>PICK YOUR MATCHUP</h2>
+      <p>Choose your team colors and mode to step up to the plate!</p>
+
+      <div class="picker-row">
+        <div class="picker-box">
+          <h4>YOUR BATTER COLOR</h4>
+          <div class="swatches" id="batterSwatches">
+            <div class="swatch active" style="background:#3a86ff" data-color="#3a86ff"></div>
+            <div class="swatch" style="background:#ff006e" data-color="#ff006e"></div>
+            <div class="swatch" style="background:#ffbe0b" data-color="#ffbe0b"></div>
+            <div class="swatch" style="background:#8338ec" data-color="#8338ec"></div>
+          </div>
+        </div>
+        <div class="picker-box">
+          <h4>PITCHER TEAM COLOR</h4>
+          <div class="swatches" id="pitcherSwatches">
+            <div class="swatch active" style="background:#e63946" data-color="#e63946"></div>
+            <div class="swatch" style="background:#fb5607" data-color="#fb5607"></div>
+            <div class="swatch" style="background:#2ec4b6" data-color="#2ec4b6"></div>
+            <div class="swatch" style="background:#6c757d" data-color="#6c757d"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button onclick="startGame('1P')">1 PLAYER (VS CPU)</button>
+        <button class="secondary" onclick="startGame('2P')">2 PLAYERS (LOCAL)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-controls">
+    <button id="actionBtn" onclick="handlePrimaryAction()">SWING (SPACE / TAP)</button>
+    <button class="secondary" onclick="openMenu()">MATCHUP MENU</button>
+  </div>
+
+  <div class="hint" id="controlHint">
+    <b>1P Mode:</b> A/D or Left/Right to aim batter • SPACE, L, or Tap to Swing
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const menuOverlay = document.getElementById("menuOverlay");
+    const controlHint = document.getElementById("controlHint");
+    const actionBtn = document.getElementById("actionBtn");
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === "swing") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } else if (type === "hit") {
+        osc.type = "square";
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (type === "homer") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(523, now);
+        osc.frequency.setValueAtTime(659, now + 0.1);
+        osc.frequency.setValueAtTime(784, now + 0.2);
+        osc.frequency.setValueAtTime(1046, now + 0.3);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      } else if (type === "out") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+    }
+
+    let batterColor = "#3a86ff";
+    let pitcherColor = "#e63946";
+
+    document.querySelectorAll("#batterSwatches .swatch").forEach(el => {
+      el.addEventListener("click", () => {
+        document.querySelectorAll("#batterSwatches .swatch").forEach(s => s.classList.remove("active"));
+        el.classList.add("active");
+        batterColor = el.dataset.color;
+      });
+    });
+
+    document.querySelectorAll("#pitcherSwatches .swatch").forEach(el => {
+      el.addEventListener("click", () => {
+        document.querySelectorAll("#pitcherSwatches .swatch").forEach(s => s.classList.remove("active"));
+        el.classList.add("active");
+        pitcherColor = el.dataset.color;
+      });
+    });
+
+    let gameMode = "1P";
+    let isPlaying = false;
+    let runs = 0;
+    let outs = 0;
+    let inning = 1;
+    let bestScore = Number(localStorage.getItem("sluggerArcadeBest") || 0);
+    document.getElementById("bestDisplay").textContent = bestScore;
+
+    let bases = [false, false, false];
+    let bannerText = "";
+    let bannerTimer = 0;
+
+    const batter = { x: 335, y: 400, swinging: false, swingAngle: 0 };
+    const pitcher = { x: 370, y: 150, aimX: 370, speed: 6.5 };
+
+    const fielders = [
+      { x: 180, y: 95, homeX: 180, homeY: 95 },
+      { x: 370, y: 75, homeX: 370, homeY: 75 },
+      { x: 560, y: 95, homeX: 560, homeY: 95 }
+    ];
+
+    const ball = {
+      x: 370,
+      y: 155,
+      vx: 0,
+      vy: 0,
+      z: 0,
+      vz: 0,
+      state: "ready",
+      timer: 60
+    };
+
+    function openMenu() {
+      isPlaying = false;
+      menuOverlay.style.display = "flex";
+    }
+
+    function startGame(mode) {
+      gameMode = mode;
+      runs = 0;
+      outs = 0;
+      inning = 1;
+      bases = [false, false, false];
+      isPlaying = true;
+      menuOverlay.style.display = "none";
+
+      if (mode === "2P") {
